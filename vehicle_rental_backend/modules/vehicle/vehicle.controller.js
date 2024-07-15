@@ -469,10 +469,10 @@ class VehicleController {
                 //     },
                 // ],
                 // {
-                    "$and": [
-                      { "pickup_date": { "$lte": drop_date } },
-                      { "drop_date": { "$gte": pickup_date } }
-                    ],
+                "$and": [
+                    { "pickup_date": { "$lte": drop_date } },
+                    { "drop_date": { "$gte": pickup_date } }
+                ],
                 //   }
                 is_payed: true,
             };
@@ -488,15 +488,30 @@ class VehicleController {
                 };
             }
 
-            console.log(JSON.stringify(bookedQuery));
             const getBookedVehicleId = await bookingModel.distinct('vehicle', bookedQuery);
-
-            console.log("getBookedVehicleId", getBookedVehicleId);
 
             searchQuery = {
                 ...searchQuery,
                 _id: { $nin: getBookedVehicleId }
             };
+
+            if (req.query.min & req.query.max) {
+                searchQuery = {
+                    ...searchQuery,
+                    $and: [
+                        { price: { $gte: req.query.min } },
+                        { price: { $lte: req.query.max } }
+                    ]
+                    // parseInt(req.query.price)
+                };
+            }
+
+            if (req.query.search) {
+                searchQuery = {
+                    ...searchQuery,
+                    name: { $regex: req.query.search, $options: 'i' }
+                };
+            }
 
             const vehicles = await vehicleModel.find(searchQuery).select("name description type sku price user images engine seat year model mileage fuel_type is_active").populate({
                 path: "user",

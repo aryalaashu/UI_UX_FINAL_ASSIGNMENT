@@ -283,8 +283,67 @@ exports.getMyBookingTransaction = async (req, res, next) => {
       }
     ]);
 
-    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+    return res.status(httpStatus.OK).json({
       messages: "My Booking Transaction!!",
+      result: [...result, ...vtResult],
+      success: true
+    });
+  } catch (error) {
+    console.log(error);
+    return res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+      messages: "Something went wrong!!",
+      success: false
+    });
+  }
+};
+
+exports.getMyIncomeTransaction = async (req, res, next) => {
+  try {
+    const myVehicle = await vehicleModel.distinct('_id', {user: req.user._id})
+    const result = await Booking.aggregate([
+      {
+        $match: {
+          vehicle: {$in: myVehicle}
+        }
+      },
+      {
+        $group: {
+          _id: "null",
+          totalBooking: { $sum: 1 },
+          totalAmount: { $sum: "$price" },
+        }
+      }
+    ]);
+    const vtResult = await Booking.aggregate([
+      {
+        $match: {
+          user: req.user._id
+        }
+      },
+      {
+        $lookup: {
+          from: 'vehicles',
+          localField: 'vehicle',
+          foreignField: '_id',
+          "as": "vehicle"
+        }
+      },
+      {
+        $unwind: {
+          path: '$vehicle'
+        }
+      },
+      {
+        $group: {
+          _id: "$vehicle.type",
+          totalBooking: { $sum: 1 },
+          totalAmount: { $sum: "$price" },
+        }
+      }
+    ]);
+
+    return res.status(httpStatus.OK).json({
+      messages: "My Income Transaction!!",
       result: [...result, ...vtResult],
       success: true
     });
