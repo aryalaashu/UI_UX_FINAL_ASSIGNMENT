@@ -1,0 +1,14 @@
+const router = require('express').Router();
+const controller = require('../modules/booking/booking.controller');
+const { verifyUser, verifyAuthorization } = require('../middlewares/auth.middlerware');
+
+// router.post('/', controller.addData);
+router.post('/create-intent', verifyUser, controller.createPaymentIntent);
+router.get('/payment-success/:id', controller.successPayment);
+router.get('/', verifyUser, verifyAuthorization, controller.getAllBookings);
+router.get('/my-booking', verifyUser, controller.getMyBooking);
+router.get('/booking-for-owner', verifyUser, controller.getBookingForOwner);
+router.get('/my-booking-transaction', verifyUser, controller.getMyBookingTransaction);
+router.put('/:id', verifyUser, controller.updateBooking);
+
+module.exports = router;
